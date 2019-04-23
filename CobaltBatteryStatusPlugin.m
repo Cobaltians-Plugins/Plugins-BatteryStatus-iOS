@@ -53,7 +53,7 @@
     if ([_listeningControllers anyObject] != nil) {
         NSDictionary * message = @{
             kJSType: kJSTypePlugin,
-            kJSPluginName: @"batteryStatus",
+            kJSPluginName: @"CobaltBatteryStatusPlugin",
             kJSAction: @"onStateChanged",
             kJSData: @{@"state": state}
         };
