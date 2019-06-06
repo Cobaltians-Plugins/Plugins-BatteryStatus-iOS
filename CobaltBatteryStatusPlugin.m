@@ -1,4 +1,5 @@
 #import "CobaltBatteryStatusPlugin.h"
+#import <Cobalt/PubSub.h>
 
 @implementation CobaltBatteryStatusPlugin
 
@@ -10,50 +11,34 @@
 
     return self;
 }
+- (void)onMessageFromWebView:(WebViewType)webView
+          inCobaltController:(nonnull CobaltViewController *)viewController
+                  withAction:(nonnull NSString *)action
+                        data:(nullable NSDictionary *)data
+          andCallbackChannel:(nullable NSString *)callbackChannel{
 
-- (void) onMessageFromCobaltController: (CobaltViewController *) viewController
-                               andData: (NSDictionary *) data {
-    [self onMessageWithCobaltController: viewController
-                                andData: data];
-}
+    if ([action isEqualToString: @"getLevel"]) {
+        NSDictionary * level = @{@"level": [self getLevel]};
 
-- (void) onMessageFromWebLayerWithCobaltController: (CobaltViewController *) viewController
-                                           andData: (NSDictionary *) data {
-    [self onMessageWithCobaltController: viewController
-                                andData: data];
-}
+        [[PubSub sharedInstance] publishMessage:level
+                                      toChannel:callbackChannel];
+    }
+    else if ([action isEqualToString: @"getState"]) {
+        NSDictionary * state = @{@"state": [self getState]};
 
-- (void) onMessageWithCobaltController: (CobaltViewController *) viewController
-                               andData: (NSDictionary *) data {
-    NSString * callback = [data objectForKey: kJSCallback];
-    NSString * action = [data objectForKey: kJSAction];
-
-    if (action != nil) {
-        if ([action isEqualToString: @"getLevel"]) {
-            NSDictionary * level = @{@"level": [self getLevel]};
-
-            [viewController sendCallback: callback
-                                withData: level];
-        }
-        else if ([action isEqualToString: @"getState"]) {
-            NSDictionary * state = @{@"state": [self getState]};
-
-            [viewController sendCallback: callback
-                                withData: state];
-        }
-        else if ([action isEqualToString: @"startStateMonitoring"]) {
-            [self startStateMonitoring: viewController];
-        }
-        else if ([action isEqualToString: @"stopStateMonitoring"]) {
-            [self stopStateMonitoring: viewController];
-        }
-        else {
-            NSLog(@"CobaltBatteryStatusPlugin onMessageWithCobaltController:andData: unknown action %@", action);
-        }
+        [[PubSub sharedInstance] publishMessage:state
+                                      toChannel:callbackChannel];
+    }
+    else if ([action isEqualToString: @"startStateMonitoring"]) {
+        [self startStateMonitoring: viewController];
+    }
+    else if ([action isEqualToString: @"stopStateMonitoring"]) {
+        [self stopStateMonitoring: viewController];
     }
     else {
-        NSLog(@"CobaltBatteryStatusPlugin onMessageWithCobaltController:andData: action is nil");
+        NSLog(@"CobaltBatteryStatusPlugin onMessageWithCobaltController:andData: unknown action %@", action);
     }
+
 }
 
 - (NSString *) getLevel {
@@ -68,7 +53,7 @@
     if ([_listeningControllers anyObject] != nil) {
         NSDictionary * message = @{
             kJSType: kJSTypePlugin,
-            kJSPluginName: @"batteryStatus",
+            kJSPluginName: @"CobaltBatteryStatusPlugin",
             kJSAction: @"onStateChanged",
             kJSData: @{@"state": state}
         };
